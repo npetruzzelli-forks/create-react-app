@@ -29,10 +29,21 @@ module.exports = function (api, opts, env) {
   var isEnvProduction = env === 'production';
   var isEnvTest = env === 'test';
 
+  var RUNTIME_BROWSER = 'browser';
+  var RUNTIME_NODE = 'node';
+  var validRuntimeEnvironments = [RUNTIME_BROWSER, RUNTIME_NODE];
+  var runtimeEnvironment = validRuntimeEnvironments.includes(opts.jsRuntime)
+    ? opts.jsRuntime
+    : isEnvTest
+    ? RUNTIME_NODE
+    : RUNTIME_BROWSER;
+  var isRuntimeBrowser = runtimeEnvironment === RUNTIME_BROWSER;
+  var isRuntimeNode = runtimeEnvironment === RUNTIME_NODE;
+
   var useESModules = validateBoolOption(
     'useESModules',
     opts.useESModules,
-    isEnvDevelopment || isEnvProduction
+    isRuntimeBrowser
   );
   var isFlowEnabled = validateBoolOption('flow', opts.flow, true);
   var isTypeScriptEnabled = validateBoolOption(
@@ -66,7 +77,7 @@ module.exports = function (api, opts, env) {
 
   return {
     presets: [
-      isEnvTest && [
+      isRuntimeNode && [
         // ES features necessary for user's Node version
         require('@babel/preset-env').default,
         {
@@ -75,7 +86,7 @@ module.exports = function (api, opts, env) {
           },
         },
       ],
-      (isEnvProduction || isEnvDevelopment) && [
+      isRuntimeBrowser && [
         // Latest stable ECMAScript features
         require('@babel/preset-env').default,
         {

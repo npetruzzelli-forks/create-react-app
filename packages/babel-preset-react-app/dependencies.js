@@ -36,6 +36,17 @@ module.exports = function (api, opts) {
   var isEnvProduction = env === 'production';
   var isEnvTest = env === 'test';
 
+  var RUNTIME_BROWSER = 'browser';
+  var RUNTIME_NODE = 'node';
+  var validRuntimeEnvironments = [RUNTIME_BROWSER, RUNTIME_NODE];
+  var runtimeEnvironment = validRuntimeEnvironments.includes(opts.jsRuntime)
+    ? opts.jsRuntime
+    : isEnvTest
+    ? RUNTIME_NODE
+    : RUNTIME_BROWSER;
+  var isRuntimeBrowser = runtimeEnvironment === RUNTIME_BROWSER;
+  var isRuntimeNode = runtimeEnvironment === RUNTIME_NODE;
+
   var areHelpersEnabled = validateBoolOption('helpers', opts.helpers, false);
   var useAbsoluteRuntime = validateBoolOption(
     'absoluteRuntime',
@@ -67,7 +78,7 @@ module.exports = function (api, opts) {
     // https://github.com/webpack/webpack/issues/4039#issuecomment-419284940
     sourceType: 'unambiguous',
     presets: [
-      isEnvTest && [
+      isRuntimeNode && [
         // ES features necessary for user's Node version
         require('@babel/preset-env').default,
         {
@@ -78,7 +89,7 @@ module.exports = function (api, opts) {
           exclude: ['transform-typeof-symbol'],
         },
       ],
-      (isEnvProduction || isEnvDevelopment) && [
+      isRuntimeBrowser && [
         // Latest stable ECMAScript features
         require('@babel/preset-env').default,
         {
@@ -131,7 +142,7 @@ module.exports = function (api, opts) {
           // https://babeljs.io/docs/en/babel-plugin-transform-runtime#useesmodules
           // We should turn this on once the lowest version of Node LTS
           // supports ES Modules.
-          useESModules: isEnvDevelopment || isEnvProduction,
+          useESModules: isRuntimeBrowser,
           // Undocumented option that lets us encapsulate our runtime, ensuring
           // the correct version is used
           // https://github.com/babel/babel/blob/090c364a90fe73d36a30707fc612ce037bdbbb24/packages/babel-plugin-transform-runtime/src/index.js#L35-L42
